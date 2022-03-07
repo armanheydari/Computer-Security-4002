@@ -1,11 +1,16 @@
 import string
 import nltk
 from nltk.corpus import words
+
 nltk.download('words')
 
 
 def is_english_word(word):
     return word in words.words()
+
+
+def preprocess_cipher(cipher_text):
+    return cipher_text.replace(' ', '').replace('\n', '')
 
 
 class DecryptText:
@@ -16,46 +21,37 @@ class DecryptText:
         self.key = None
         self.plain = ''
 
-    def is_plain(self):
+    def is_plain(self, founded_word_rate=0.8):
         true_records = 0
         words_list = self.plain.split(' ')
         for w in words_list:
             if is_english_word(w):
                 true_records += 1
-        if true_records/len(words_list)>0.8:
+        if true_records / len(words_list) > founded_word_rate:
             return True
         return False
 
-    def plain_with_key(self, a, b):
+    def find_plain_with_key(self, key):
         res = ''
         for c in self.cipher:
-            new_index = (a * self.uppercase_list.index(c) + b) % 27
+            new_index = (self.uppercase_list.index(c) + key) % 26
             res += self.uppercase_list[new_index]
         return res
 
     def decrypt(self):
-        for test_key in range(27):
-            self.plain = self.plain_with_key(test_key)
+        for test_key in range(26):
+            self.plain = self.find_plain_with_key(test_key)
             if self.is_plain():
+                self.key = test_key
                 return self.plain
-        return "Can't find plain text!"
+        return "Couldn't find plain text!"
 
 
 if __name__ == '__main__':
     input_text = open('sc_p1_input.txt').read()
-    preprocessed_text = input_text.replace(' ', '').replace('\n', '')
-    decrypt_text = DecryptText(input_text)
-    print(decrypt_text.decrypt())
-    # with open('sc_p1_output.txt', 'w') as output_file:
-    #     output_file.write(cipher_text)
-
-# def find_duplicates(text):
-#     words = text.split(' ')
-#     s = set()
-#     duplicates = []
-#     for word in words:
-#         if word in s:
-#             duplicates.append(word)
-#         else:
-#             s.add(word)
-#     return duplicates
+    preprocessed_text = preprocess_cipher(input_text)
+    decrypt_text = DecryptText(preprocessed_text)
+    plain_text = decrypt_text.decrypt()
+    print(plain_text)
+    with open('sc_p1_output.txt', 'w') as output_file:
+        output_file.write(plain_text)
